@@ -18,10 +18,12 @@ no_index:
     - inc
     - t
 requires:
-  IM::Engine: 0.02
-  Path::Dispatcher: 0.12
+  IM::Engine: 0.03
+  Moose: 0
+  Path::Dispatcher: 0.13
+  perl: 5.8.1
 resources:
   homepage: http://github.com/sartak/IM-Engine-Plugin-Dispatcher/tree
   license: http://dev.perl.org/licenses/
   repository: git://github.com/sartak/IM-Engine-Plugin-Dispatcher.git
-version: 0.01
+version: 0.02

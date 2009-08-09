@@ -1,9 +1,10 @@
 package IM::Engine::Plugin::Dispatcher;
+use 5.008001;
 use Moose;
 use Moose::Util::TypeConstraints;
 extends 'IM::Engine::Plugin';
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 subtype 'IM::Engine::Plugin::Dispatcher::Dispatcher'
      => as 'Path::Dispatcher';
@@ -14,16 +15,10 @@ coerce 'IM::Engine::Plugin::Dispatcher::Dispatcher'
         my $class = $_;
         Class::MOP::load_class($class);
 
-        # A subclass of Path::Dispatcher
-        if ($class->can('new')) {
-            return $class->new;
-        }
-        # A sybclass of Path::Dispatcher::Declarative
-        else {
+        if ($class->isa('Path::Dispatcher::Declarative')) {
             return $class->dispatcher;
         }
-
-        # would be nice to improve this...
+        return $class->new;
     };
 
 has dispatcher => (
@@ -31,12 +26,6 @@ has dispatcher => (
     isa      => 'IM::Engine::Plugin::Dispatcher::Dispatcher',
     coerce   => 1,
     required => 1,
-);
-
-has has_augmented_dispatcher => (
-    is      => 'rw',
-    isa     => 'Bool',
-    default => 0,
 );
 
 sub BUILD {
@@ -50,18 +39,17 @@ sub BUILD {
     );
 }
 
+sub post_initialization {
+    my $self = shift;
+    $self->engine->each_plugin(
+        role       => 'Dispatcher::AugmentsDispatcher',
+        callback   => sub { shift->augment_dispatcher($self->dispatcher) },
+    );
+}
+
 sub incoming {
     my $self     = shift;
     my $incoming = shift;
-
-    unless ($self->has_augmented_dispatcher) {
-        $self->has_augmented_dispatcher(1);
-        $self->engine->each_plugin(
-            role       => 'Dispatcher::AugmentsDispatcher',
-            method     => 'augment_dispatcher',
-            dispatcher => $self->dispatcher,
-        );
-    }
 
     my $message = $self->dispatch($incoming, @_);
     return $message if blessed $message;
